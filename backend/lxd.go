@@ -41,7 +41,7 @@ var (
 	lxdDockerPool               = ""
 	lxdDockerDisk               = "10GB"
 	lxdNetworkIPv6Filtering     = "true"
-	lxdSecurityPrivileged		= "false"
+	lxdSecurityPrivileged		= false
 
 	lxdHelp = map[string]string{
 		"EXEC_CMD":               fmt.Sprintf("command to run via exec/ssh (default %q)", lxdExecCmd),
@@ -63,7 +63,7 @@ var (
 		"NETWORK_STATIC":         fmt.Sprintf("whether to statically set network configuration (default %v)", lxdNetworkStatic),
 		"NETWORK_DNS":            fmt.Sprintf("comma separated list of DNS servers (requires NETWORK_STATIC) (default %q)", lxdNetworkDns),
 		"NETWORK_IPV6_FILTERING": fmt.Sprintf("prevent the containers from spoofing another's IPv6 address (default %s)", lxdNetworkIPv6Filtering),
-		"SECURITY_PRIVILEGED":	  fmt.Sprintf("request a container to run without a UID mapping when set true (default %s)", lxdSecurityPrivileged),
+		"SECURITY_PRIVILEGED":	  fmt.Sprintf("request a container to run without a UID mapping when set true (default %v)", lxdSecurityPrivileged),
 	}
 )
 
@@ -110,7 +110,7 @@ type lxdProvider struct {
 	networkLeases        map[string]string
 	networkLeasesLock    sync.Mutex
 	networkIPv6Filtering string
-	securityPrivileged	 string
+	securityPrivileged	 bool
 
 	pool        string
 	dockerCache string
@@ -166,10 +166,13 @@ func newLXDProvider(cfg *config.ProviderConfig) (Provider, error) {
 		networkIPv6Filtering = cfg.Get("NETWORK_IPV6_FILTERING")
 	}
 
+	fmt.Printf("%#v\n", lxdSecurityPrivileged)
 	securityPrivileged := lxdSecurityPrivileged
+	fmt.Printf("%#v\n", securityPrivileged)
 	if cfg.IsSet("SECURITY_PRIVILEGED") {
-		securityPrivileged = cfg.Get("SECURITY_PRIVILEGED")
+		securityPrivileged = cfg.Get("SECURITY_PRIVILEGED") == "true"
 	}
+	fmt.Printf("%#v\n", securityPrivileged)
 
 	networkStatic := lxdNetworkStatic
 	networkMTU := "1500"
@@ -610,14 +613,14 @@ func (p *lxdProvider) Start(ctx gocontext.Context, startAttributes *StartAttribu
 			return nil, err
 		}
 	}
-
+	fmt.Printf("%#v\n", p.securityPrivileged)
 	// Create the container
 	config := map[string]string{
 		"security.devlxd":                      "false",
 		"security.idmap.isolated":              "true",
 		"security.idmap.size":                  "100000",
 		"security.nesting":                     "true",
-		"security.privileged":                  p.securityPrivileged,
+		"security.privileged":                  strconv.FormatBool(p.securityPrivileged),
 		"security.syscalls.intercept.mknod":    "true",
 		"security.syscalls.intercept.setxattr": "true",
 		"limits.memory":                        p.limitMemory,
