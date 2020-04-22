@@ -617,7 +617,7 @@ func (p *lxdProvider) Start(ctx gocontext.Context, startAttributes *StartAttribu
 		"security.idmap.isolated":              "true",
 		"security.idmap.size":                  "100000",
 		"security.nesting":                     "true",
-		"security.privileged":                  p.securityPrivileged,
+		"security.privileged":                  "true",
 		"security.syscalls.intercept.mknod":    "true",
 		"security.syscalls.intercept.setxattr": "true",
 		"limits.memory":                        p.limitMemory,
